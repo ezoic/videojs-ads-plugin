@@ -1,21 +1,20 @@
-var merge = require('webpack-merge');
-var CleanWebpackPlugin = require('clean-webpack-plugin');
+const merge = require('webpack-merge');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-var buildProps = require('./webpack.properties.js');
+const buildProps = require('./webpack.properties.js');
 
-var WEBPACK_MODE = buildProps.MODE_DEVELOPMENT;
+const WEBPACK_MODE = buildProps.MODE_DEVELOPMENT;
 
-var commonConfig = require('./webpack.common.js')(WEBPACK_MODE);
+const commonConfig = require('./webpack.common.js')(WEBPACK_MODE);
 
 module.exports = function (env, argv) {
-
-    var cleanConfig = {
+    const cleanConfig = {
         plugins: [
             new CleanWebpackPlugin()
         ]
     };
 
-    var pluginConfig = {
+    const pluginConfig = {
         mode: WEBPACK_MODE,
         entry: buildProps.plugin.entry_file,
         devtool: buildProps.devTool[WEBPACK_MODE],
@@ -27,7 +26,5 @@ module.exports = function (env, argv) {
         }
     };
 
-    pluginConfig = merge(pluginConfig, commonConfig, cleanConfig);
-
-    return [pluginConfig];
+    return [merge(pluginConfig, commonConfig, cleanConfig)];
 };

@@ -1,10 +1,12 @@
 module.exports = {
   "env": {
-    "browser": true
+    "browser": true,
+    "es6": true,
+    "node": true
   },
   "extends": "standard",
   "parserOptions": {
-    "ecmaVersion": 5,
+    "ecmaVersion": 2015,
     "sourceType": "module",
     "ecmaFeatures": {
       "jsx": false
@@ -17,15 +19,14 @@ module.exports = {
     "space-before-function-paren": 2,
     "padding-line-between-statements": "off",
     "padded-blocks": "off",
-
     "camelcase": "off",
     "eqeqeq": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-useless-escape": "off",
-
     "no-mixed-spaces-and-tabs": "off",
+    "no-var": "off",
     "indent": "off",
     "no-tabs": "off",
     "brace-style": "off",
@@ -38,6 +39,17 @@ module.exports = {
     "no-multiple-empty-lines": "off",
     "no-debugger": "off",
     "no-inline-comments": "off",
-    "no-multi-spaces": "off"
+    "no-multi-spaces": "off",
+    "space-before-function-paren": "off",
+    "eol-last": "off",
+    "object-curly-spacing": "off",
+    "prefer-regex-literals": "off",
+    "no-prototype-builtins": "off",
+    "object-curly-newline": "off",
+    "dot-notation": "off",
+    "node/handle-callback-err": "off",
+    "quote-props": "off",
+    "multiline-ternary": "off",
+    "node/no-callback-literal": "off",
   }
 };

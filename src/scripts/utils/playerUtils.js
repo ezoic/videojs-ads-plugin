@@ -289,110 +289,110 @@ playerUtils.prepareForAds = function (player) {
    */
   function monkeyPatchPlayerApi () {
 
-    /**
-     * Monkey patch needed to handle firstPlay and resume of playing ad.
-     *
-     * @param callOrigPlay necessary flag to prevent infinite loop when you are restoring a VAST ad.
-     * @returns {player}
-     */
-    var origPlay = player.play;
-    player.play = function (callOrigPlay) {
-      var that = this;
+    // /**
+    //  * Monkey patch needed to handle firstPlay and resume of playing ad.
+    //  *
+    //  * @param callOrigPlay necessary flag to prevent infinite loop when you are restoring a VAST ad.
+    //  * @returns {player}
+    //  */
+    // var origPlay = player.play;
+    // player.play = function (callOrigPlay) {
+    //   var that = this;
 
-      if (isFirstPlay()) {
-        firstPlay();
-      } else {
-        resume(callOrigPlay);
-      }
+    //   if (isFirstPlay()) {
+    //     firstPlay();
+    //   } else {
+    //     resume(callOrigPlay);
+    //   }
 
-      return this;
+    //   return this;
 
-      // **** Local Functions **** //
-      function firstPlay () {
-        if (!utilities.isIPhone()) {
-          if (!volumeSnapshot) {
-              volumeSnapshot = saveVolumeSnapshot();
-          }
-          player.muted(true);
-        }
+    //   // **** Local Functions **** //
+    //   function firstPlay () {
+    //     if (!utilities.isIPhone()) {
+    //       if (!volumeSnapshot) {
+    //           volumeSnapshot = saveVolumeSnapshot();
+    //       }
+    //       player.muted(true);
+    //     }
 
-        origPlay.apply(that, arguments);
-      }
+    //     origPlay.apply(that, arguments);
+    //   }
 
-      function resume (callOrigPlay) {
-        if (isAdPlaying() && !callOrigPlay) {
-          player.vast.adUnit.resumeAd();
-        } else {
-        	if (!isVpaidPlaying()) {
-                origPlay.apply(that, arguments);
-        	}
-        }
-      }
-    };
-
-
-    /**
-     * Needed monkey patch to handle pause of playing ad.
-     *
-     * @param callOrigPlay necessary flag to prevent infinite loop when you are pausing a VAST ad.
-     * @returns {player}
-     */
-    var origPause = player.pause;
-    player.pause = function (callOrigPause) {
-      if (isAdPlaying() && !callOrigPause) {
-        player.vast.adUnit.pauseAd();
-      } else {
-      	if (!isVpaidPlaying()) {
-      		origPause.apply(this, arguments);
-      	}
-      }
-      return this;
-    };
+    //   function resume (callOrigPlay) {
+    //     if (isAdPlaying() && !callOrigPlay) {
+    //       player.vast.adUnit.resumeAd();
+    //     } else {
+    //     	if (!isVpaidPlaying()) {
+    //             origPlay.apply(that, arguments);
+    //     	}
+    //     }
+    //   }
+    // };
 
 
-    /**
-     * Needed monkey patch to handle paused state of the player when ads are playing.
-     *
-     * @param callOrigPlay necessary flag to prevent infinite loop when you are pausing a VAST ad.
-     * @returns {player}
-     */
-    var origPaused = player.paused;
-    player.paused = function (callOrigPaused) {
-      if (isAdPlaying() && !callOrigPaused) {
-        return player.vast.adUnit.isPaused();
-      }
-      return origPaused.apply(this, arguments);
-    };
+    // /**
+    //  * Needed monkey patch to handle pause of playing ad.
+    //  *
+    //  * @param callOrigPlay necessary flag to prevent infinite loop when you are pausing a VAST ad.
+    //  * @returns {player}
+    //  */
+    // var origPause = player.pause;
+    // player.pause = function (callOrigPause) {
+    //   if (isAdPlaying() && !callOrigPause) {
+    //     player.vast.adUnit.pauseAd();
+    //   } else {
+    //   	if (!isVpaidPlaying()) {
+    //   		origPause.apply(this, arguments);
+    //   	}
+    //   }
+    //   return this;
+    // };
 
 
-    /**
-     * VIDLA-4391: Needed monkey patch to handle bug in v5.28.x Brightcove Players when passing src MediaFile objects up to vjs player in iframe parent window
-     */
-    var isBrightcoveV5 = function isBrightcoveV5 () {
-      return (videojs && !videojs.getPlugins);   // v5.x.x Brightcove players didn't feature the getPlugins API method
-    };
+    // /**
+    //  * Needed monkey patch to handle paused state of the player when ads are playing.
+    //  *
+    //  * @param callOrigPlay necessary flag to prevent infinite loop when you are pausing a VAST ad.
+    //  * @returns {player}
+    //  */
+    // var origPaused = player.paused;
+    // player.paused = function (callOrigPaused) {
+    //   if (isAdPlaying() && !callOrigPaused) {
+    //     return player.vast.adUnit.isPaused();
+    //   }
+    //   return origPaused.apply(this, arguments);
+    // };
 
-    // Have to do this only when MOL script has loaded in iframe
-    if (parent && window !== parent && isBrightcoveV5() && utilities.scriptLoadedInIframe()) {
-      var origSrc = player.src;
-      player.src = function (source) {
-        if (source && !(source instanceof parent.Object)) {
-          if (utilities.isIE11()) {
-             var temp = new parent.Object();
-             for (var prop in source) {
-               if (source.hasOwnProperty(prop)) {
-                temp[prop] = source[prop];
-               }
-             }
-             source = temp;
-          }
-          else {
-            source = parent.Object.assign(new parent.Object(), source);
-          }
-        }
-        origSrc.call(this, source);
-      };
-    }
+
+    // /**
+    //  * VIDLA-4391: Needed monkey patch to handle bug in v5.28.x Brightcove Players when passing src MediaFile objects up to vjs player in iframe parent window
+    //  */
+    // var isBrightcoveV5 = function isBrightcoveV5 () {
+    //   return (videojs && !videojs.getPlugins);   // v5.x.x Brightcove players didn't feature the getPlugins API method
+    // };
+
+    // // Have to do this only when MOL script has loaded in iframe
+    // if (parent && window !== parent && isBrightcoveV5() && utilities.scriptLoadedInIframe()) {
+    //   var origSrc = player.src;
+    //   player.src = function (source) {
+    //     if (source && !(source instanceof parent.Object)) {
+    //       if (utilities.isIE11()) {
+    //          var temp = new parent.Object();
+    //          for (var prop in source) {
+    //            if (source.hasOwnProperty(prop)) {
+    //             temp[prop] = source[prop];
+    //            }
+    //          }
+    //          source = temp;
+    //       }
+    //       else {
+    //         source = parent.Object.assign(new parent.Object(), source);
+    //       }
+    //     }
+    //     origSrc.call(this, source);
+    //   };
+    // }
   }
 
   function isVpaidPlaying () {

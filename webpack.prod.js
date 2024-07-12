@@ -33,7 +33,21 @@ module.exports = function (env, argv) {
                         end: 'PROD-EXCLUDE-END'        // Format: /* BUILD-EXCLUDE-END */   -- End of code block to exclude from the build
                     }
                 }]
-            }]
+            },
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: [
+                  {
+                    loader: 'eslint-loader',
+                    options: {
+                      emitWarning: true,
+                      failOnError: false,
+                      failOnWarning: false
+                    }
+                  }
+                ]
+              }]
         }
     };
 

@@ -1,77 +1,71 @@
-var webpack = require('webpack');
-var path = require('path');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
+const webpack = require('webpack');
+const path = require('path');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
-var buildProps = require('./webpack.properties.js');
+const buildProps = require('./webpack.properties.js');
 
-var bannerOptions = {
+const bannerOptions = {
     banner: buildProps.plugin.bannerText,
     entryOnly: true,
     raw: false
-}
-
+};
 
 module.exports = function (mode) {
-
     console.log('Exporting Common Config > mode: ' + mode);
 
-    var config = {
+    const config = {
         module: {
             rules: [
                 {
                     test: /\.js$/,
-                    enforce: 'pre',
-                    include: [
-                         path.resolve(__dirname, 'src')
-                    ],
-                    loader: 'eslint-loader',
-                    options: {
-                        emitError: true,
-                        failOnError: true,
-                    }
-                },
-                {
-                    test: /\.js$/,
-                    enforce: 'pre',
                     include: [
                         path.resolve(__dirname, 'src')
                     ],
-                    loader: StringReplacePlugin.replace({
-                        replacements: [
-                            {
-                                /* Any '</script>' (closing stript tags within string literals)
-                                 * that exist in the code must be escaped - or they may be
-                                 * misinterpreted by browsers as closing the parent script tag
-                                 * that this code is embedded within on the parent html page. */
-                                pattern: /<\/script>/gi,
-                                replacement: function (match, p1, offset, string) {
-                                    console.warn('*******************************************************************************************');
-                                    console.warn('*** WARNING: "<\/script>" string found in code - THIS SHOULD BE ESCAPED to: "<\\/script>" ***');
-                                    console.warn('*******************************************************************************************');
-                                    return '<\\/script>';
-                                }
-                            },
-                            {
-                                /* Remove any debugger statements for a production build */
-                                pattern: /debugger;|debugger/g,
-                                replacement: function (match, p1, offset, string) {
-                                    if (mode === buildProps.MODE_PRODUCTION) {
-                                        return '';
-                                    } else {
-                                        console.warn('********************************************************************************');
-                                        console.warn('*** DEV WARNING: debugger; statement found in code - DO NOT COMMIT THIS CODE ***');
-                                        console.warn('********************************************************************************');
-                                        return match;   // Return the same string back - just throw a big warning
+                    use: [
+                        {
+                            loader: 'babel-loader',
+                            options: {
+                                presets: ['@babel/preset-env'],
+                                plugins: [
+                                    // Custom Babel plugin to replace strings
+                                    function () {
+                                        return {
+                                            visitor: {
+                                                StringLiteral(path) {
+                                                    // Replace </script> with <\/script>
+                                                    if (path.node.value.includes('</script>')) {
+                                                        console.warn('*******************************************************************************************');
+                                                        console.warn('*** WARNING: "<\/script>" string found in code - THIS SHOULD BE ESCAPED to: "<\\/script>" ***');
+                                                        console.warn('*******************************************************************************************');
+                                                        path.node.value = path.node.value.replace(/<\/script>/gi, '<\\/script>');
+                                                    }
+                                                },
+                                                DebuggerStatement(path) {
+                                                    // Remove debugger statements in production mode
+                                                    if (mode === buildProps.MODE_PRODUCTION) {
+                                                        path.remove();
+                                                    } else {
+                                                        console.warn('********************************************************************************');
+                                                        console.warn('*** DEV WARNING: debugger; statement found in code - DO NOT COMMIT THIS CODE ***');
+                                                        console.warn('********************************************************************************');
+                                                    }
+                                                }
+                                            }
+                                        };
                                     }
-                                }
+                                ]
                             }
-                        ]
-                    })
+                        }
+                    ]
                 }
             ]
         },
         plugins: [
-            new StringReplacePlugin(),
+            new ESLintPlugin({
+                context: path.resolve(__dirname, 'src'),
+                emitError: true,
+                failOnError: true,
+            }),
             new webpack.BannerPlugin(bannerOptions)
         ]
     };

@@ -1,6 +1,7 @@
 'use strict';
 
-var VASTClient = require('../ads/vast/VASTClient');
+const { VASTClient, VASTParser, VASTTracker } = require('@dailymotion/vast-client');
+
 var VASTError = require('../ads/vast/VASTError');
 var vastUtil = require('../ads/vast/vastUtil');
 
@@ -19,7 +20,7 @@ var logger = require('../utils/consoleLogger');
 module.exports = function VASTPlugin (options) {
   var snapshot;
   var player = this;
-  var vast = new VASTClient({wrapperLimit: options.wrapperLimit});
+  var vast = new VASTClient();
   var adsCanceled = false;
   var playlistNextButton;
   var defaultOpts = {
@@ -27,7 +28,7 @@ module.exports = function VASTPlugin (options) {
     // implementation after play has been requested. Ad implementations are
     // expected to load any dynamic libraries and make any requests to determine
     // ad policies for a video during this time.
-    timeout: 500,
+    timeout: 3000,
 
     // TODO:finish this IOS FIX
     // Whenever you play an add on IOS, the native player kicks in and we loose control of it. On very heavy pages the 'play' event
@@ -37,7 +38,7 @@ module.exports = function VASTPlugin (options) {
 
     // maximun amount of time for the ad to actually start playing. If this timeout gets
     // triggered the ads will be cancelled
-    adCancelTimeout: 3000,
+    adCancelTimeout: 10000,
 
     // Boolean flag that configures the player to play a new ad before the user sees the video again
     // the current video
@@ -198,7 +199,6 @@ module.exports = function VASTPlugin (options) {
         player.vast.adUnit = null; // We remove the adUnit
         player.vast.VPAID = null;
       }
-      window._molSettings.firstPlay = false;
     }
 
     function restoreVideoContent () {
@@ -317,7 +317,22 @@ module.exports = function VASTPlugin (options) {
   }
 
   function getVastResponse (callback) {
-    vast.getVASTResponse(settings.adTagUrl ? settings.adTagUrl() : settings.adTagXML, callback);
+    console.log('getting vast response');
+    if (settings.adTagUrl) {
+      vast.get(settings.adTagUrl()).then(response => {
+        console.log(response);
+        callback(null, response);
+      }).catch(error => {
+        callback(error);
+      })
+    } else {
+      vast.parseVAST(settings.adTagXML).then(response => {
+        console.log(response);
+        callback(null, response);
+      }).catch(error => {
+        callback(error);
+      });
+    }
   }
 
   function playAd (vastResponse, callback) {
@@ -326,26 +341,7 @@ module.exports = function VASTPlugin (options) {
     if (adsCanceled) {
       return;
     }
-
-    /* Copyright (c) 2011-2016 Moat Inc. All Rights Reserved. */
-    // eslint-disable-next-line
-    function initMoatTracking (a,c,d,h,k){var f=document.createElement("script"),b=[];c={adData:{ids:c,duration:d,url:k},dispatchEvent:function(a){this.sendEvent?(b&&(b.push(a),a=b,b=!1),this.sendEvent(a)):b.push(a);}};d="_moatApi"+Math.floor(1E8*Math.random());var e,g;try{e=a.ownerDocument,g=e.defaultView||e.parentWindow;}catch(l){e=document,g=window;}g[d]=c;f.type="text/javascript";a&&a.insertBefore(f,a.childNodes[0]||null);f.src="https://z.moatads.com/"+h+"/moatvideo.js#"+d;return c;}
-    window.MoatApiReference = null;
-    if (vastResponse.ads && vastResponse.ads.length > 0 && vastResponse.ads[0].inLine && vastResponse.ads[0].inLine.moat) {
-  	  var ids = {level1: vastResponse.ads[0].inLine.moat.advid,
-  			     level2: vastResponse.ads[0].inLine.moat.cpgid,
-  			     level3: vastResponse.ads[0].inLine.moat.cpid,
-  			     level4: vastResponse.ads[0].inLine.moat.crid};
-  	  if (vastResponse.ads[0].inLine.moat.site_id) {
-  		  ids.slicer1 = vastResponse.ads[0].inLine.moat.site_id;
-  	  }
-  	  window.MoatApiReference = initMoatTracking(player.el_, ids, player.duration(), vastResponse.ads[0].inLine.moat.partnercode, player.currentSource().src);
-    }
-    if (window._molSettings.viewabilityTracking) {
-  	  window._molSettings.viewabilityTracking.init(window._molSettings.viewability.contextId,
-  			  player.duration(), player.el_.offsetWidth, player.el_.offsetHeight);
-    }
-
+    
     var isAdVPAID  = isVPAID(vastResponse);
     var adIntegrator = isAdVPAID ? new VPAIDIntegrator(player, settings) : new VASTIntegrator(player);
     var adFinished = false;
@@ -522,6 +518,7 @@ module.exports = function VASTPlugin (options) {
   function isVPAID (vastResponse) {
     var i, len;
     var mediaFiles = vastResponse.mediaFiles;
+    if (!mediaFiles) return false;
     for (i = 0, len = mediaFiles.length; i < len; i++) {
       if (vastUtil.isVPAID(mediaFiles[i])) {
         return true;

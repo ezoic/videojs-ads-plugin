@@ -34,9 +34,10 @@ VASTIntegrator.prototype.playAd = function playAd (vastResponse, callback) {
   var that = this;
   callback = callback || utilities.noop;
 
-  if (!(vastResponse instanceof VASTResponse)) {
-    return callback(new VASTError('On VASTIntegrator, missing required VASTResponse'));
-  }
+  console.log(vastResponse);
+  // if (!(vastResponse instanceof VASTResponse)) {
+  //   return callback(new VASTError('On VASTIntegrator, missing required VASTResponse'));
+  // }
 
   async.waterfall([
     function (next) {
@@ -85,16 +86,41 @@ VASTIntegrator.prototype.playAd = function playAd (vastResponse, callback) {
 VASTIntegrator.prototype._selectAdSource = function selectAdSource (response, callback) {
   var source;
 
+  var ads = response.ads;
+  if (!ads || ads.length === 0) {
+    return callback(new VASTError('No ads found on the VAST response'));
+  }
+  var creativeToPlay;
+  for (var i = 0, len = ads.length; i < len; i++) {
+    if (!ads[i].creatives || ads[i].creatives.length === 0) {
+      continue;
+    }
+    for (var j = 0, lenJ = ads[i].creatives.length; j < lenJ; j++) {
+      if (ads[i].creatives[j].mediaFiles && ads[i].creatives[j].mediaFiles.length > 0) {
+        creativeToPlay = ads[i].creatives[j];
+        break;
+      }
+    }
+    if (creativeToPlay) {
+      break;
+    }
+  }
+
   var playerWidth = dom.getDimension(this.player.el()).width;
-  response.mediaFiles.sort(function compareTo (a, b) {
+  creativeToPlay.mediaFiles.sort(function compareTo (a, b) {
     var deltaA = Math.abs(playerWidth - a.width);
     var deltaB = Math.abs(playerWidth - b.width);
     return deltaA - deltaB;
   });
 
-  source = this.player.selectSource(response.mediaFiles).source;
+  var sources = creativeToPlay.mediaFiles.map(function (mediaFile) {
+    mediaFile.src = mediaFile.fileURL;
+    return mediaFile;
+  });
+
+  source = this.player.selectSource(sources);
   if (source) {
-    this.player.trigger({type: 'trace.message', data: {message: 'Playing ' + source.src + ' (type = ' + source.type + ')'}});
+    this.player.trigger({type: 'trace.message', data: {message: 'Playing ' + source.src + ' (type = ' + source.deliveryType + ')'}});
   }
 
   if (source) {
@@ -111,7 +137,7 @@ VASTIntegrator.prototype._selectAdSource = function selectAdSource (response, ca
 
 VASTIntegrator.prototype._createVASTTracker = function createVASTTracker (adMediaFile, response, callback) {
   try {
-    callback(null, adMediaFile, new VASTTracker(adMediaFile.src, response), response);
+    callback(null, adMediaFile, new VASTTracker(adMediaFile.fileURL, response), response);
   } catch (e) {
     callback(e, response);
   }

@@ -6,17 +6,24 @@ var VPAIDHTML5Tech = require('../vpaid/VPAIDHTML5Tech');
 var vastUtil = {
 
   track: function track (URLMacros, variables) {
-    var sources = vastUtil.parseURLMacros(URLMacros, variables);
-    var trackImgs = [];
-    sources.forEach(function (src) {
-      var img = new Image();
-      img.src = src;
-      trackImgs.push(img);
-    });
-    return trackImgs;
+    console.log('track');
+    console.log(URLMacros);
+    console.log(variables);
+    return [];
+    // var sources = vastUtil.parseURLMacros(URLMacros, variables);
+    // var trackImgs = [];
+    // sources.forEach(function (src) {
+    //   var img = new Image();
+    //   img.src = src;
+    //   trackImgs.push(img);
+    // });
+    // return trackImgs;
   },
 
   parseURLMacros: function parseMacros (URLMacros, variables) {
+    console.log('parseURLMacros');
+    console.log(URLMacros);
+    console.log(variables);
     var parsedURLs = [];
 
     variables = variables || {};

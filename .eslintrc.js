@@ -51,5 +51,8 @@ module.exports = {
     "quote-props": "off",
     "multiline-ternary": "off",
     "node/no-callback-literal": "off",
+    "object-shorthand": "off",
+    "n/handle-callback-err": "off",
+    "no-trailing-spaces": "off",
   }
 };
